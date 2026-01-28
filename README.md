@@ -1,6 +1,6 @@
 # Chip-8 Emulator (C++)
 
-A Cycle-Accurate Chip-8 interpreter written in C++17 using SDL2 for rendering.
+A Cycle-Accurate Chip-8 interpreter written in C++20 using SDL2 for rendering.
 
 ## Project Goal
 This project serves as a deep dive into systems programming and computer architecture. The goal is to build a functional emulator from scratch to understand the "Fetch-Decode-Execute" cycle, memory management, and bitwise operations required for low-level software development.
@@ -21,8 +21,8 @@ This project serves as a deep dive into systems programming and computer archite
     * Implement delay and sound timers (60Hz timing).
 
 ## Dependencies
-* **C++ Compiler:** GCC or Clang (supporting C++17)
-* **Build System:** GNU Make
+* **C++ Compiler:** GCC or Clang (supporting C++20)
+* **Build System:** CMake
 * **Library:** SDL2 (Simple DirectMedia Layer)
 
 ## Building the Project
@@ -30,17 +30,19 @@ This project serves as a deep dive into systems programming and computer archite
 ### 1. Install Dependencies
 **Fedora / RHEL:**
 ```bash
-sudo dnf install SDL2-devel
+sudo dnf install SDL2-devel cmake
 ```
 **Ubuntu / Debian:**
 ```bash
-sudo apt-get install libsdl2-dev
+sudo apt-get install libsdl2-dev cmake
 ```
 
 ### 2. Compile and Run
-Clone the repository and run the Makefile:
+Clone the repository, create a build directory, and then run `cmake`:
 ```bash
-make
-./chip8_emu
+mkdir build && cd build
+cmake ..
+cmake --build .
+./chip8_emulator
 ```
 

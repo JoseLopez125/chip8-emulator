@@ -1,3 +1,16 @@
-# Compiled Executable
-chip8_emu
+# Compiled Object files
+*.o
+*.obj
 
+# Editor/IDE specific
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Build output
+build/
