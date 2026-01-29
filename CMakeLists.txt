@@ -7,7 +7,9 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(SDL2 REQUIRED)
 
 # 2. Add the executable (your main.cpp)
-add_executable(chip8_emulator main.cpp)
+add_executable(chip8_emulator main.cpp
+        Chip8.cpp
+        Chip8.h)
 
 # 3. Include SDL2 headers so #include <SDL2/SDL.h> works
 target_include_directories(chip8_emulator PRIVATE ${SDL2_INCLUDE_DIRS})
