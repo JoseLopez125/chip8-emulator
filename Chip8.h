@@ -6,6 +6,12 @@
 
 class Chip8 {
 public:
+    static constexpr unsigned int SCREEN_WIDTH = 64;
+    static constexpr unsigned int SCREEN_HEIGHT = 32;
+
+    // Display (64x32 monochrome pixels)
+    std::array<std::array<uint8_t, SCREEN_WIDTH>, SCREEN_HEIGHT> display{};
+
     Chip8();
 
     bool loadROM(const std::string &filename);
@@ -14,13 +20,11 @@ public:
 private:
     static constexpr unsigned int MEMORY_SIZE = 4096;
     static constexpr unsigned int REGISTER_COUNT = 16;
-    static constexpr unsigned int SCREEN_WIDTH = 64;
-    static constexpr unsigned int SCREEN_HEIGHT = 32;
     static constexpr unsigned int ROM_OFFSET = 512; // ROM starts at 0x200 (512) in memory
     static constexpr unsigned int STACK_SIZE = 16;
 
     // Hardware
-    std::array<uint8_t, REGISTER_COUNT> registers{}; // 16 Registers called V0..VF
+    std::array<uint8_t, REGISTER_COUNT> registers{}; // 16 Registers called V0...VF
     std::array<uint8_t, MEMORY_SIZE> memory{};       // RAM
     uint16_t index{};                                // Index Register (I)
     uint16_t pc{ROM_OFFSET};                         // Program Counter (points at current instruction)
@@ -28,7 +32,5 @@ private:
     uint8_t sp{};                                    // Stack pointer
     uint8_t delayTimer{};                            // Timer to achieve 60Hz
     uint8_t soundTimer{};                            // Gives off beeping sound when != 0
-    std::array<uint8_t,SCREEN_WIDTH * SCREEN_HEIGHT>
-            display{};                               // Display (64x32 monochrome pixels)
     uint16_t opcode{};                               // Current instruction to be decoded from chip8
 };

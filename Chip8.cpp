@@ -11,11 +11,64 @@ void Chip8::cycle() {
     opcode = (static_cast<uint16_t>(memory[pc]) << 8) | memory[pc + 1];
 
     // TEMPORARY DEBUG: Print what the CPU sees
-    printf("PC: 0x%04X | Opcode: 0x%04X\n", pc, opcode);
+    // printf("PC: 0x%04X | Opcode: 0x%04X\n", pc, opcode);
 
     pc += 2; // move pc to next instruction
 
-    // TODO: Decode and execute opcode
+    // Decode and execute opcode
+    switch (opcode & 0xF000) {
+        case 0x0000: // opcode: 0x0___
+            switch (opcode) {
+            case 0x00e0: // opcode: 0x00e0
+                    // Clear the display
+                    for (auto& row : display)
+                        std::fill(row.begin(), row.end() , 0);
+                    break;
+            }
+            break;
+        case 0x1000: // opcode: 0x1NNN
+            // Jump to address NNN
+            pc = opcode & 0x0FFF;
+            break;
+        case 0x6000: // opcode: 0x6XNN
+            // Set register VX to NN
+            registers.at((opcode & 0x0F00) >> 8) = opcode & 0x00FF;
+            break;
+        case 0x7000: // opcode: 0x7XNN
+            // Add NN to register VX
+            registers.at((opcode & 0x0F00) >> 8) += opcode & 0x00FF;
+            break;
+        case 0xA000: // opcode: 0xANNN
+            // Sets index register I to address NNN
+            index = opcode & 0x0FFF;
+            break;
+        case 0xD000: // opcode: 0xDXYN
+            // Draw sprite to coordinate (VX, VY) with a width of 8 pixels and a
+            // height of N pixels. Sprite starts at memory location I. X and y
+            // are the top left corner of the sprite.
+            uint8_t x = registers.at((opcode & 0x0F00) >> 8) % SCREEN_WIDTH;
+            uint8_t y = registers.at((opcode & 0x00F0) >> 4) % SCREEN_HEIGHT;
+            uint8_t height = opcode & 0x000F;
+
+            registers.at(15) = 0; // VF set to 0
+            // Iterate through each row of the sprite
+            for (uint8_t row = 0; row < height && y + row < SCREEN_HEIGHT; row++) {
+                // Iterate through each pixel in the row
+                uint8_t spriteByte = memory.at(index + row);
+                for (uint8_t col = 0; col < 8 && x + col < SCREEN_WIDTH; col++) {
+                    // Check if the pixel in the sprite is set to 1
+                    if ((spriteByte & (0x80 >> col)) != 0) {
+                        // Check if the pixel in the display is also set to 1
+                        if (display.at(y + row).at(x + col) == 1) {
+                            registers.at(16) = 1; // VF set to 1
+                        }
+                        // XOR the pixel in the display with the sprite
+                        display.at(y + row).at(x + col) ^= 1;
+                    }
+                }
+            }
+            break;
+    }
 }
 
 bool Chip8::loadROM(const std::string &filename) {
@@ -42,14 +95,6 @@ bool Chip8::loadROM(const std::string &filename) {
     // without changing the data.
     // .data() gives us a raw pointer to the underlying array.
     file.read(reinterpret_cast<char *>(memory.data() + ROM_OFFSET), size);
-
-    // TEMPORARY DEBUG: Print first 10 bytes of code
-    std::cout << "ROM in Memory:" << std::endl;
-    for (int i = 0; i < 10; ++i) {
-        // 0x200 is 512 (Start of Chip-8 programs)
-        printf("0x%02X ", memory[512 + i]);
-    }
-    std::cout << std::endl;
 
     file.close();
 
