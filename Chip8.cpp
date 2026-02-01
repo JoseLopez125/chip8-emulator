@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 
-Chip8::Chip8() = default;
+Chip8::Chip8() : randGen(std::random_device{}()), randByte(0, 255) {}
 
 void Chip8::cycle() {
     // Fetch instruction from memory at the current PC (program counter)
@@ -157,6 +157,16 @@ void Chip8::cycle() {
             // Sets index register I to address NNN
             index = opcode & 0x0FFF;
             break;
+        case 0xB000: // opcode: 0xBNNN
+            // Jumps to the address NNN
+            pc = (opcode & 0x0FFF) + registers.at(0);
+            break;
+        case 0xC000: {
+            // opcode: 0xCXNN
+            // Sets VX to a random number between 0 and 255 with a mask NN
+            registers.at((opcode & 0x0F00) >> 8) = randByte(randGen) & (opcode & 0x00FF);
+            break;
+        }
         case 0xD000: {
             // opcode: 0xDXYN
             // Draw sprite to coordinate (VX, VY) with a width of 8 pixels and a

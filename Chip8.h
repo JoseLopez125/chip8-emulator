@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <random>
 #include <string>
 
 class Chip8 {
@@ -33,4 +34,8 @@ private:
     uint8_t delayTimer{};                            // Timer to achieve 60Hz
     uint8_t soundTimer{};                            // Gives off beeping sound when != 0
     uint16_t opcode{};                               // Current instruction to be decoded from chip8
+
+    // Helpers to generate random numbers for opcode 0xCXNN
+    std::default_random_engine randGen;
+    std::uniform_int_distribution<uint8_t> randByte;
 };
