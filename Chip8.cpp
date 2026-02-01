@@ -17,18 +17,48 @@ void Chip8::cycle() {
 
     // Decode and execute opcode
     switch (opcode & 0xF000) {
-        case 0x0000: // opcode: 0x0___
+        case 0x0000:
+            // opcode: 0x0___
             switch (opcode) {
-            case 0x00e0: // opcode: 0x00e0
+                case 0x00e0:
+                    // opcode: 0x00e0
                     // Clear the display
                     for (auto& row : display)
                         std::fill(row.begin(), row.end() , 0);
+                    break;
+                case 0x00ee:
+                    // opcode: 0x00EE
+                    // Return from subroutine
+                    pc = stack.at(--sp);
                     break;
             }
             break;
         case 0x1000: // opcode: 0x1NNN
             // Jump to address NNN
             pc = opcode & 0x0FFF;
+            break;
+        case 0x2000: // opcode: 0x2NNN
+            // Call subroutine at NNN
+            stack.at(sp++) = pc;
+            pc = opcode & 0x0FFF;
+            break;
+        case 0x3000: // opcode: 0x3XNN
+            // Skip next instruction if VX == NN
+            if (registers.at((opcode & 0x0F00) >> 8) == (opcode & 0x00FF)) {
+                pc += 2;
+            }
+            break;
+        case 0x4000: // opcode: 0x4XNN
+            // Skip next instruction if VX != NN
+            if (registers.at((opcode & 0x0F00) >> 8) != (opcode & 0x00FF)) {
+                pc += 2;
+            }
+            break;
+        case 0x5000: // opcode: 0x5XY0
+            // Skip next instruction if VX == VY
+            if (registers.at((opcode & 0x0F00) >> 8) == registers.at((opcode & 0x00F0) >> 4)) {
+                pc += 2;
+            }
             break;
         case 0x6000: // opcode: 0x6XNN
             // Set register VX to NN
@@ -38,11 +68,90 @@ void Chip8::cycle() {
             // Add NN to register VX
             registers.at((opcode & 0x0F00) >> 8) += opcode & 0x00FF;
             break;
+        case 0x8000: { // opcode: 0x8___
+            switch (opcode & 0x000F) {
+                case 0x0000: // opcode: 0x8XY0
+                    // Set VX to VY
+                    registers.at((opcode & 0x0F00) >> 8) = registers.at((opcode & 0x00F0) >> 4);
+                    break;
+                case 0x0001: // opcode: 0x8XY1
+                    // Set VX to VX OR VY
+                    registers.at((opcode & 0x0F00) >> 8) |= registers.at((opcode & 0x00F0) >> 4);
+                    break;
+                case 0x0002: // opcode: 0x8XY2
+                    // Set VX to VX AND VY
+                    registers.at((opcode & 0x0F00) >> 8) &= registers.at((opcode & 0x00F0) >> 4);
+                    break;
+                case 0x0003: // opcode: 0x8XY3
+                    // Set VX to VX XOR VY
+                    registers.at((opcode & 0x0F00) >> 8) ^= registers.at((opcode & 0x00F0) >> 4);
+                    break;
+                case 0x0004: { // opcode: 0x8XY4
+                    // Adds VY to VX. If there is an overflow set VF 1 and 0 if not
+                    uint8_t vx = registers.at((opcode & 0x0F00) >> 8);
+                    uint8_t vy = registers.at((opcode & 0x00F0) >> 4);
+                    registers.at(15) = 0; // Set VF to 0
+                    int tempResult = vx + vy;
+                    if (tempResult > UINT8_MAX) {
+                        registers.at(15) = 1;
+                    }
+                    registers.at((opcode & 0x0f00) >> 8) += vy;
+                    break;
+                }
+                case 0x0005: { // opcode: 0x8XY5
+                    // Subtracts VY from VX. If there is an underflow set VF
+                    // to 0 and 1 if not
+                    uint8_t vx = registers.at((opcode & 0x0F00) >> 8);
+                    uint8_t vy = registers.at((opcode & 0x00F0) >> 4);
+                    registers.at(15) = 0;
+                    if (vx >= vy) {
+                        registers.at(15) = 1;
+                    }
+                    registers.at((opcode & 0x0F00) >> 8) -= vy;
+                    break;
+                }
+                case 0x0006: { // opcode: 0x8XY6
+                    // Shift VX to the right by 1, and store the shifted bit
+                    // into VF
+                    uint8_t vx = registers.at((opcode & 0x0F00) >> 8);
+                    registers.at(15) = vx & 0x1;
+                    registers.at((opcode & 0x0F00) >> 8) >>= 1;
+                    break;
+                }
+                case 0x0007: { // opcode: 0x8XY7
+                    // Set VX to VY - VX. If there is an underflow set VF to
+                    // 0 and 1 if not
+                    uint8_t vx = registers.at((opcode & 0x0F00) >> 8);
+                    uint8_t vy = registers.at((opcode & 0x00F0) >> 4);
+                    registers.at(15) = 0;
+                    if (vy >= vx) {
+                        registers.at(15) = 1;
+                    }
+                    registers.at((opcode & 0x0F00) >> 8) = vy - vx;
+                    break;
+                }
+                case 0x000E: { // opcode: 0x8XYE
+                    // Shift VX to the left by 1, and store the shifted bit
+                    // into VF
+                    uint8_t vx = registers.at((opcode & 0x0F00) >> 8);
+                    registers.at(15) = (vx & 0x80) >> 7;
+                    registers.at((opcode & 0x0F00) >> 8) <<= 1;
+                    break;
+                }
+            }
+            break;
+        }
+        case 0x9000: // opcode: 0x9XY0
+            // Skip next instruction if VX != VY
+            if (registers.at((opcode & 0x0F00) >> 8) != registers.at((opcode & 0x00F0) >> 4)) {
+                pc += 2;
+            }
+            break;
         case 0xA000: // opcode: 0xANNN
             // Sets index register I to address NNN
             index = opcode & 0x0FFF;
             break;
-        case 0xD000: // opcode: 0xDXYN
+        case 0xD000: { // opcode: 0xDXYN
             // Draw sprite to coordinate (VX, VY) with a width of 8 pixels and a
             // height of N pixels. Sprite starts at memory location I. X and y
             // are the top left corner of the sprite.
@@ -60,7 +169,7 @@ void Chip8::cycle() {
                     if ((spriteByte & (0x80 >> col)) != 0) {
                         // Check if the pixel in the display is also set to 1
                         if (display.at(y + row).at(x + col) == 1) {
-                            registers.at(16) = 1; // VF set to 1
+                            registers.at(15) = 1; // VF set to 1
                         }
                         // XOR the pixel in the display with the sprite
                         display.at(y + row).at(x + col) ^= 1;
@@ -68,6 +177,45 @@ void Chip8::cycle() {
                 }
             }
             break;
+        }
+        case 0xF000: { // opcode: 0xF___
+            switch (opcode & 0x00FF) {
+                case 0x001E: // opcode: 0xFX1E
+                    // Add VX to index register I
+                    index += registers.at((opcode & 0x0F00) >> 8);
+                    break;
+                case 0x0033: { // opcode: 0xFX33
+                    // Store VX as a three decimal digit with each digit in a
+                    // separate memory location at I
+                    // ex. if vx contains 156 (0x86), it would put the number 1,
+                    // at address in I, 5 in address I+1, and 6 in address I+2
+                    int vx = registers.at((opcode & 0x0F00) >> 8);
+                    memory.at(index) = vx / 100;
+                    memory.at(index + 1) = (vx / 10) % 10;
+                    memory.at(index + 2) = vx % 10;
+                    break;
+                }
+                case 0x0055: { // opcode: 0xFX55
+                    // Stores from V0 to VX (inclusive) in memory starting at
+                    // address I. Each register gets its own memory address
+                    uint8_t x = (opcode & 0x0F00) >> 8;
+                    for (uint8_t i = 0; i <= x; i++) {
+                        memory.at(index + i) = registers.at(i);
+                    }
+                    break;
+                }
+                case 0x0065: { // opcode: 0xFX65
+                    // Fills from V0 to VX (inclusive) with values from memory,
+                    // starting at address I.
+                    uint8_t x = (opcode & 0x0F00) >> 8;
+                    for (uint8_t i = 0; i <= x; i++) {
+                        registers.at(i) = memory.at(index + i);
+                    }
+                    break;
+                }
+            }
+            break;
+        }
     }
 }
 

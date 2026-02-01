@@ -29,7 +29,7 @@ private:
     uint16_t index{};                                // Index Register (I)
     uint16_t pc{ROM_OFFSET};                         // Program Counter (points at current instruction)
     std::array<uint16_t, STACK_SIZE> stack{};        // Stack for subroutine calls
-    uint8_t sp{};                                    // Stack pointer
+    uint8_t sp{0};                                   // Stack pointer
     uint8_t delayTimer{};                            // Timer to achieve 60Hz
     uint8_t soundTimer{};                            // Gives off beeping sound when != 0
     uint16_t opcode{};                               // Current instruction to be decoded from chip8
