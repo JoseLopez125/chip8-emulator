@@ -1,13 +1,13 @@
 #include <SDL2/SDL.h>
 #include <iostream>
+#include <chrono>
 
 #include "Chip8.h"
 
 bool init();
-
-void kill();
-
-bool loop();
+void cleanup();
+void updateDisplay();
+bool handleInput();
 
 // Pointers to our window, renderer, and texture
 SDL_Window* window{};
@@ -16,24 +16,42 @@ SDL_Texture* texture{};
 
 Chip8 chip8;
 
-// State for key press
-bool g_keyPressed = false;
-
 int main(int argc, char *argv[]) {
     if (!init()) return 1;
 
-    chip8.loadROM("4-flags.ch8");
+    chip8.loadROM("6-keypad.ch8");
 
-    // main loop
-    while (loop()) {
-        SDL_Delay(16);
+    auto lastFrameTime = std::chrono::high_resolution_clock::now();
+
+    bool running = true;
+    while (running) {
+        running = handleInput();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float dt = std::chrono::duration<float, std::chrono::milliseconds::period>(currentTime - lastFrameTime).count();
+
+        // 16.67 milliseconds ~60 Frames Per Second (60Hz)
+        if (dt >= 16.67f) {
+            lastFrameTime = currentTime;
+
+            // Run the CPU 11 times per frame to achieve ~660Hz CPU speed (11 * 60 frames)
+            for (int i = 0; i < 11; i++) {
+                chip8.cycle();
+            }
+
+            // Update Chip8 timers
+            if (chip8.delayTimer > 0) chip8.delayTimer--;
+            if (chip8.soundTimer > 0) chip8.soundTimer--;
+
+            updateDisplay();
+        }
     }
 
-    kill();
+    cleanup();
     return 0;
 }
 
-bool loop() {
+bool handleInput() {
     SDL_Event e{};
     while (SDL_PollEvent(&e) != 0) {
         if (e.type == SDL_QUIT) {
@@ -63,9 +81,10 @@ bool loop() {
             }
         }
     }
+    return true;
+}
 
-    chip8.cycle();
-
+void updateDisplay() {
     // Update the texture
     void* pixels;
     int pitch;
@@ -87,8 +106,6 @@ bool loop() {
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
-
-    return true;
 }
 
 bool init() {
@@ -121,7 +138,7 @@ bool init() {
     return true;
 }
 
-void kill() {
+void cleanup() {
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
