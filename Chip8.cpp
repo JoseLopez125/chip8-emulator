@@ -4,8 +4,8 @@
 #include <iostream>
 
 Chip8::Chip8() : randGen(std::random_device{}()), randByte(0, 255) {
-    // Load font sprites to memory in 0x050 - 0x09F
-    uint8_t fontset[80] = {
+    // Load font sprites to memor   y
+    uint8_t fontset[FONT_ADDRESS] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
         0x20, 0x60, 0x20, 0x20, 0x70, // 1
         0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -218,12 +218,64 @@ void Chip8::cycle() {
             }
             break;
         }
+        case 0xE000: {
+            // opcode: 0xEX__
+            switch (opcode & 0x00FF) {
+                case 0x009E: {
+                    // opcode: 0xEX9
+                    // Skip next instruction if key VX is pressed
+                    int key = registers.at((opcode & 0x0F00) >> 8);
+                    if (keypad.at(key)) {
+                        pc += 2;
+                    }
+                    break;
+                }
+                case 0x00A1: {
+                    // opcode: 0xEXA1
+                    // Skip next instruction if key VX is not pressed
+                    int key = registers.at((opcode & 0x0F00) >> 8);
+                    if (!keypad.at(key)) {
+                        pc += 2;
+                    }
+                    break;
+                }
+            }
+            break;
+        }
         case 0xF000: {
             // opcode: 0xF___
             switch (opcode & 0x00FF) {
+                case 0x0007: // opcode: 0xFX07
+                    // Set VX to the value of the delay timer
+                    registers.at((opcode & 0x0F00) >> 8) = delayTimer;
+                    break;
+                case 0x000A: { // opcode: 0xFX0A
+                    // Wait for a key input and store in VX
+                    pc -= 2;
+                    for (int i = 0; i < keypad.size(); i++) {
+                        if (keypad.at(i)) {
+                            registers.at((opcode & 0x0F00) >> 8) = i;
+                            pc += 2;
+                            break;
+                        }
+                    }
+                    break;
+                }
+                case 0x0015: // opcode: 0xFX15
+                    // Set dalay timer to VX
+                    delayTimer = registers.at((opcode & 0x0F00) >> 8);
+                    break;
+                case 0x0018: // opcode: 0xFX18
+                    // Set sound timer to VX
+                    soundTimer = registers.at((opcode & 0x0F00) >> 8);
+                    break;
                 case 0x001E: // opcode: 0xFX1E
                     // Add VX to index register I
                     index += registers.at((opcode & 0x0F00) >> 8);
+                    break;
+                case 0x0029: // opcode: 0xFX29
+                    // Set index register I to address of hexadecimal character in VX
+                    index = registers.at((opcode & 0x0F00) >> 8) * 5 + FONT_ADDRESS;
                     break;
                 case 0x0033: {
                     // opcode: 0xFX33

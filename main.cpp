@@ -44,7 +44,7 @@ bool loop() {
 
             // The standard mapping from the original 16-key hex pad
             switch (e.key.keysym.sym) {
-                case SDLK_1: chip8.keypad.at(0x0) = isDown; break;
+                case SDLK_1: chip8.keypad.at(0x1) = isDown; break;
                 case SDLK_2: chip8.keypad.at(0x2) = isDown; break;
                 case SDLK_3: chip8.keypad.at(0x3) = isDown; break;
                 case SDLK_4: chip8.keypad.at(0xC) = isDown; break;

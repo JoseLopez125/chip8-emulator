@@ -9,6 +9,8 @@ class Chip8 {
 public:
     static constexpr unsigned int SCREEN_WIDTH = 64;
     static constexpr unsigned int SCREEN_HEIGHT = 32;
+    // Font address is 0x050 to 0x09f in memory
+    static constexpr unsigned int FONT_ADDRESS = 0x50;
 
     // Display (64x32 monochrome pixels)
     std::array<std::array<uint8_t, SCREEN_WIDTH>, SCREEN_HEIGHT> display{};
