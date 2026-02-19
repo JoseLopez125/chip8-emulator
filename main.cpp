@@ -22,15 +22,11 @@ bool g_keyPressed = false;
 int main(int argc, char *argv[]) {
     if (!init()) return 1;
 
-    chip8.loadROM("2-ibm-logo.ch8");
-
-    for (int i = 0; i < 10; ++i) {
-        chip8.cycle();
-    }
+    chip8.loadROM("4-flags.ch8");
 
     // main loop
     while (loop()) {
-        SDL_Delay(100);
+        SDL_Delay(16);
     }
 
     kill();
@@ -40,11 +36,31 @@ int main(int argc, char *argv[]) {
 bool loop() {
     SDL_Event e{};
     while (SDL_PollEvent(&e) != 0) {
-        switch (e.type) {
-            case SDL_QUIT: // SDL_QUIT allows the app to quit
-                return false;
-            default:
-                break;
+        if (e.type == SDL_QUIT) {
+            return false;
+        } else if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
+            // True if a key is pressed down, False if it was released
+            bool isDown = (e.type == SDL_KEYDOWN);
+
+            // The standard mapping from the original 16-key hex pad
+            switch (e.key.keysym.sym) {
+                case SDLK_1: chip8.keypad.at(0x0) = isDown; break;
+                case SDLK_2: chip8.keypad.at(0x2) = isDown; break;
+                case SDLK_3: chip8.keypad.at(0x3) = isDown; break;
+                case SDLK_4: chip8.keypad.at(0xC) = isDown; break;
+                case SDLK_q: chip8.keypad.at(0x4) = isDown; break;
+                case SDLK_w: chip8.keypad.at(0x5) = isDown; break;
+                case SDLK_e: chip8.keypad.at(0x6) = isDown; break;
+                case SDLK_r: chip8.keypad.at(0xD) = isDown; break;
+                case SDLK_a: chip8.keypad.at(0x7) = isDown; break;
+                case SDLK_s: chip8.keypad.at(0x8) = isDown; break;
+                case SDLK_d: chip8.keypad.at(0x9) = isDown; break;
+                case SDLK_f: chip8.keypad.at(0xE) = isDown; break;
+                case SDLK_z: chip8.keypad.at(0xA) = isDown; break;
+                case SDLK_x: chip8.keypad.at(0x0) = isDown; break;
+                case SDLK_c: chip8.keypad.at(0xB) = isDown; break;
+                case SDLK_v: chip8.keypad.at(0xF) = isDown; break;
+            }
         }
     }
 

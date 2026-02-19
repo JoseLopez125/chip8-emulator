@@ -12,6 +12,7 @@ public:
 
     // Display (64x32 monochrome pixels)
     std::array<std::array<uint8_t, SCREEN_WIDTH>, SCREEN_HEIGHT> display{};
+    std::array<bool, 16> keypad{};                   // Keypad 0-F, true if pressed, false if not pressed
 
     Chip8();
 
