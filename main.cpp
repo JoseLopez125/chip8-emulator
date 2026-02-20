@@ -1,13 +1,19 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 #include <chrono>
+#include <cmath>
 
 #include "Chip8.h"
+
+// Audio settings
+const int AMPLITUDE = 28000;
+const int SAMPLE_RATE = 44100;
 
 bool init();
 void cleanup();
 void updateDisplay();
 bool handleInput();
+void audioCallback(void* userdata, Uint8* stream, int len);
 
 // Pointers to our window, renderer, and texture
 SDL_Window* window{};
@@ -39,9 +45,15 @@ int main(int argc, char *argv[]) {
                 chip8.cycle();
             }
 
-            // Update Chip8 timers
+            // Update Chip8 timers and handle sound
             if (chip8.delayTimer > 0) chip8.delayTimer--;
-            if (chip8.soundTimer > 0) chip8.soundTimer--;
+
+            if (chip8.soundTimer > 0) {
+                SDL_PauseAudio(0); // Play sound
+                chip8.soundTimer--;
+            } else {
+                SDL_PauseAudio(1); // Pause sound
+            }
 
             updateDisplay();
         }
@@ -49,6 +61,20 @@ int main(int argc, char *argv[]) {
 
     cleanup();
     return 0;
+}
+
+void audioCallback(void* userdata, Uint8* stream, int len) {
+    static double phase = 0.0;
+    auto* buffer = (Sint16*)stream;
+    int length = len / sizeof(Sint16);
+
+    for (int i = 0; i < length; i++) {
+        buffer[i] = (Sint16)(AMPLITUDE * sin(phase));
+        phase += 2.0 * M_PI * 440.0 / SAMPLE_RATE; // 440 Hz tone
+        if (phase >= 2.0 * M_PI) {
+            phase -= 2.0 * M_PI;
+        }
+    }
 }
 
 bool handleInput() {
@@ -135,10 +161,24 @@ bool init() {
         return false;
     }
 
+    // Audio setup
+    SDL_AudioSpec want, have;
+    SDL_zero(want);
+    want.freq = SAMPLE_RATE;
+    want.format = AUDIO_S16;
+    want.channels = 1;
+    want.samples = 2048;
+    want.callback = audioCallback;
+    if (SDL_OpenAudio(&want, &have) < 0) {
+        std::cout << "Error opening audio: " << SDL_GetError() << std::endl;
+        return false;
+    }
+
     return true;
 }
 
 void cleanup() {
+    SDL_CloseAudio();
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
