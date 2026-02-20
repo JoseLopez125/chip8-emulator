@@ -2,9 +2,10 @@
 
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
 Chip8::Chip8() : randGen(std::random_device{}()), randByte(0, 255) {
-    // Load font sprites to memor   y
+    // Load font sprites to memory
     uint8_t fontset[FONT_ADDRESS] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
         0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -23,7 +24,7 @@ Chip8::Chip8() : randGen(std::random_device{}()), randByte(0, 255) {
         0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
         0xF0, 0x80, 0xF0, 0x80, 0x80  // F
     };
-    std::copy(std::begin(fontset), std::end(fontset), memory.begin() + 0x50);
+    std::copy(std::begin(fontset), std::end(fontset), memory.begin() + FONT_ADDRESS);
 }
 
 void Chip8::cycle() {
@@ -197,6 +198,7 @@ void Chip8::cycle() {
             uint8_t y = registers.at((opcode & 0x00F0) >> 4) % SCREEN_HEIGHT;
             uint8_t height = opcode & 0x000F;
 
+            registers.at(15) = 0; // Clear the collision flag before drawing
             // Iterate through each row of the sprite
             for (uint8_t row = 0; row < height && y + row < SCREEN_HEIGHT; row++) {
                 // Iterate through each pixel in the row
@@ -204,15 +206,12 @@ void Chip8::cycle() {
                 for (uint8_t col = 0; col < 8 && x + col < SCREEN_WIDTH; col++) {
                     // Check if the pixel in the sprite is set to 1
                     if ((spriteByte & (0x80 >> col)) != 0) {
+                        // Check if the pixel in the display is also set to 1
+                        if (display.at(y + row).at(x + col) == 1) {
+                            registers.at(15) = 1; // VF set to 1 (collision)
+                        }
                         // XOR the pixel in the display with the sprite
                         display.at(y + row).at(x + col) ^= 1;
-
-                        // Set flag VF
-                        if (display.at(y + row).at(x + col) == 1) {
-                            registers.at(15) = 1; // VF set to 1
-                        } else {
-                            registers.at(15) = 0; // VF set to 0
-                        }
                     }
                 }
             }
@@ -222,7 +221,7 @@ void Chip8::cycle() {
             // opcode: 0xEX__
             switch (opcode & 0x00FF) {
                 case 0x009E: {
-                    // opcode: 0xEX9
+                    // opcode: 0xEX9E
                     // Skip next instruction if key VX is pressed
                     int key = registers.at((opcode & 0x0F00) >> 8);
                     if (keypad.at(key)) {
@@ -251,14 +250,31 @@ void Chip8::cycle() {
                     break;
                 case 0x000A: { // opcode: 0xFX0A
                     // Wait for a key input and store in VX
-                    pc -= 2;
-                    for (int i = 0; i < keypad.size(); i++) {
-                        if (keypad.at(i)) {
-                            registers.at((opcode & 0x0F00) >> 8) = i;
-                            pc += 2;
+                    static bool waitingForKeyPress = true;
+                    static int keyPressed = -1;
+
+                    if (waitingForKeyPress) {
+                        // Check if any key is currently pressed.
+                        for (int i = 0; i < keypad.size(); ++i) {
+                            if (keypad.at(i)) {
+                                waitingForKeyPress = false;
+                                keyPressed = i;
+                                registers.at((opcode & 0x0F00) >> 8) = keyPressed;
+                                break;
+                            }
+                        }
+                    } else {
+                        // We have to wait for realese
+                        // If the previously pressed key is now released, we can go to next instruction.
+                        if (!keypad.at(keyPressed)) {
+                            waitingForKeyPress = true;
+                            keyPressed = -1;
                             break;
                         }
                     }
+
+                    // If key not pressed and then released, continue waiting
+                    pc -= 2;
                     break;
                 }
                 case 0x0015: // opcode: 0xFX15
@@ -275,7 +291,7 @@ void Chip8::cycle() {
                     break;
                 case 0x0029: // opcode: 0xFX29
                     // Set index register I to address of hexadecimal character in VX
-                    index = registers.at((opcode & 0x0F00) >> 8) * 5 + FONT_ADDRESS;
+                    index = FONT_ADDRESS + (registers.at((opcode & 0x0F00) >> 8) * 5);
                     break;
                 case 0x0033: {
                     // opcode: 0xFX33
