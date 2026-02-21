@@ -23,9 +23,16 @@ SDL_Texture* texture{};
 Chip8 chip8;
 
 int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <ROM_FILE>" << std::endl;
+        return 1;
+    }
+
     if (!init()) return 1;
 
-    chip8.loadROM("6-keypad.ch8");
+    if (!chip8.loadROM(argv[1])) {
+        return 1; // Exit if ROM loading fails
+    }
 
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
 
