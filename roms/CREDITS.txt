@@ -1,0 +1,12 @@
+# ROM Credits and Licensing
+
+The ROMs included in this directory are intended strictly for educational purposes and testing the accuracy of the emulator. They are widely distributed in the public domain or freely available for emulator development.
+
+## Test Suite (roms/test-roms/)
+* Timendus CHIP-8 Test Suite - Created by Timendus (https://github.com/Timendus/chip8-test-suite).
+
+## Public Domain Games
+* Brix (1990) - Created by Andreas Gustafsson. Public Domain.
+* Tetris (1991) - Created by Fran Dachille. Public Domain.
+
+If you are the copyright holder of any of these files and wish for them to be removed from this educational repository, please open an issue.
