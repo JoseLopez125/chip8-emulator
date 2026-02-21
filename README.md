@@ -44,12 +44,12 @@ This project was a deep dive into systems programming and computer architecture.
 
 Clone the repository and create a build directory.
 ```bash
-git clone https://your-repo-url/chip8-emulator.git
+git clone https://github.com/JoseLopez125/chip8-emulator.git
 cd chip8-emulator
 mkdir build && cd build
 ```
 
-Now, run CMake to configure the project. **On Windows, you must add the vcpkg toolchain file argument.**
+Run CMake to configure the project. **On Windows, you must add the vcpkg toolchain file argument.**
 
 **Linux / macOS:**
 ```bash
@@ -61,7 +61,7 @@ cmake ..
 cmake .. -DCMAKE_TOOLCHAIN_FILE=[path to vcpkg]/scripts/buildsystems/vcpkg.cmake
 ```
 
-Finally, build the project and run it with a ROM.
+To build the project and run it with a ROM:
 
 ```bash
 cmake --build .
